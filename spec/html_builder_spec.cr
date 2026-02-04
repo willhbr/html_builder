@@ -84,4 +84,18 @@ describe HTML::Builder do
     end
     str.should eq %(<a>&lt;&gt;</a>)
   end
+
+  it "escapes text from IO" do
+    str = HTML.build do
+      a { text { |io| io.print "<>" } }
+    end
+    str.should eq %(<a>&lt;&gt;</a>)
+  end
+
+  it "writes directly to IO" do
+    str = HTML.build do
+      a { text(escape: false) { |io| io.print "<span></span>" } }
+    end
+    str.should eq %(<a><span></span></a>)
+  end
 end

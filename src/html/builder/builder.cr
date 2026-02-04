@@ -35,6 +35,7 @@ struct HTML::Builder
   @buffer : IO
 
   def initialize(@buffer : IO)
+    @escaping = HTMLEscapingIO.new(@buffer)
   end
 
   @[Deprecated("Use HTML.build directly")]
@@ -66,8 +67,43 @@ struct HTML::Builder
   # HTML::Builder.new.build { text "crystal is awesome" }
   # # => crystal is awesome
   # ```
-  def text(text)
-    HTML.escape(text, @buffer)
+  def text(text, escape = true)
+    if escape
+      HTML.escape(text, @buffer)
+    else
+      html(text)
+    end
+  end
+
+  # Renders content written to `io` escaped in html tag.
+  #
+  # ```
+  # HTML::Builder.new.build do
+  #   text do |io|
+  #     io.puts "crystal is awesome"
+  #   end
+  # end
+  # # => crystal is awesome
+  # ```
+  def text(escape = true, &block)
+    if escape
+      yield @escaping
+    else
+      yield @buffer
+    end
+  end
+
+  private class HTMLEscapingIO < IO
+    def initialize(@io : IO)
+    end
+
+    def write(slice : Bytes) : Nil
+      HTML.escape(slice, @io)
+    end
+
+    def read(slice : Bytes) : Int32
+      0
+    end
   end
 
   # Renders the provided html string.
